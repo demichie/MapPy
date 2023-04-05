@@ -277,8 +277,13 @@ for count in range(npaths):
 
         paths[0].insert(count+1, paths[0].pop(count+idxMin))
 
+# CONTARE I VICINI
+# RIORDINARE METTENDO IN CIMA QUELLI CHE HANNO 1 SOLO VICINO
+# CREARE LE CATENE DI VICINI
 
 ### NEW TO HERE
+
+
 
 p_endOLD = paths[0][0].start
 p_startOLD = paths[0][0].end
@@ -344,7 +349,7 @@ for path in paths:
 
         if p_start == p_endOLD:
         
-            # print('CONNECTED PATH',p_start,p_endOLD)
+            print('CONNECTED PATH AT END')
         
             xx = np.append(xx,x)
             yy = np.append(yy,y)
@@ -353,7 +358,7 @@ for path in paths:
             
         elif p_end == p_startOLD:
         
-            # print('CONNECTED PATH',p_start,p_endOLD)
+            print('CONNECTED PATH AT START')
         
             xx = np.append(x,xx)
             yy = np.append(y,yy)
@@ -362,7 +367,7 @@ for path in paths:
             
         else:
         
-            # print('NEW PATH',p_start,p_endOLD)
+            print('NEW PATH')
             
             xy = zip(xx,yy)
             line = LineString(xy)
