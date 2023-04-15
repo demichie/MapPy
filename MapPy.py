@@ -1264,7 +1264,7 @@ class App(customtkinter.CTk):
                                            initialdir='./',
                                            filetypes=filetypes)
 
-        autotrace_cmd = './autotrace/autotrace'
+        autotrace_cmd = 'autotrace'
         autotrace_opt = '--centerline --background-color ffffff --color-count 2 --preserve-width'
         autotrace_inp = '-input-format JPEG'
         autotrace_out = '-output-format svg -output-file'
