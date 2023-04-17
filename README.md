@@ -7,7 +7,7 @@ You can download it from the [CustomTkinter repository](https://github.com/TomSc
 MapPy can read a svg file or a jpeg file. To use a jpeg file you need to install [AutoTrace](https://github.com/autotrace/autotrace/releases)
 and add the path in MapPy (line 1068).
 
-If you do not have autotrace installed, you can create the .svg file with Inkscape, usinc the function Trace Bitmap with Detection Mode set to "cenerline tracing".
+If you do not have autotrace installed, you can create the .svg file with Inkscape, usinc the function Trace Bitmap with Detection Mode set to "centerline tracing".
 
 
 It is also pissible to download a Docker container with MapPy and all the required tools:
