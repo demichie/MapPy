@@ -281,8 +281,38 @@ def change_paths_order(self, paths):
             if (path1.start == path2.end) or (path1.start == path2.start) or (
                     path1.end == path2.end) or (path1.end == path2.start):
 
-                connected_list[count1].append(count1 + count2 + 1)
-                connected_list[count1 + count2 + 1].append(count1)
+                if (path1.start == path2.end):
+
+                    side1 = 'start'
+                    side2 = 'end'
+
+                elif (path1.start == path2.start):
+
+                    side1 = 'start'
+                    side2 = 'start'
+
+                elif (path1.end == path2.end):
+
+                    side1 = 'end'
+                    side2 = 'end'
+
+                elif (path1.end == path2.start):
+
+                    side1 = 'end'
+                    side2 = 'start'
+
+
+                vect1_x, vect1_y = tangent_path(path1, side1)
+                vect2_x, vect2_y = tangent_path(path2, side2)
+
+                cos12 = vect1_x * vect2_x + vect1_y * vect2_y
+                angle_12 = np.degrees(np.arccos(-cos12))
+                print(angle_12)
+
+                if angle_12 < 30.0:
+
+                    connected_list[count1].append(count1 + count2 + 1)
+                    connected_list[count1 + count2 + 1].append(count1)
 
     new_path = []
     idx_new_path = -1
@@ -1058,16 +1088,16 @@ class App(customtkinter.CTk):
             save_lines(rem_linestrings, self)
 
     def select_file(self):
-        filetypes = (('jpeg files', '*.jpg *.jpeg *.JPG *.JPEG'), ('All files',
+        filetypes = (('ppm files', '*.ppm'), ('All files',
                                                                    '*.*'))
 
         self.filename = fd.askopenfilename(title='Open a file',
                                            initialdir='./',
                                            filetypes=filetypes)
 
-        autotrace_cmd = './autotrace/autotrace'
+        autotrace_cmd = '/usr/bin/autotrace'
         autotrace_opt = '--centerline --background-color ffffff --color-count 2 --preserve-width'
-        autotrace_inp = '-input-format JPEG'
+        autotrace_inp = '-input-format ppm'
         autotrace_out = '-output-format svg -output-file'
 
         filename_split = self.filename.split('.')
@@ -1077,7 +1107,7 @@ class App(customtkinter.CTk):
             ' ' + self.filename + ' ' + autotrace_out + ' ' + self.filename_svg
         os.system(cmd)
         self.filename_jpg = self.filename
-        # print(cmd)
+        print(cmd)
 
         img = plt.imread(self.filename)
 
@@ -1165,7 +1195,7 @@ class App(customtkinter.CTk):
         self.labels = []
         self.linestrings = []
 
-        text_kwargs = dict(ha='center', va='center', fontsize=12, color='r')
+        text_kwargs = dict(ha='center', va='center', fontsize=10, color='r')
 
         for line in multiline.geoms:
 
