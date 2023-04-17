@@ -77,6 +77,8 @@ def save_shp(linestrings, elev, filename_svg, lx, ly, cellsize, epsg):
     filename_shp = filename_svg.replace('svg', 'shp')
     path_geom.to_file(filename_shp)
 
+    print(filename_shp,' saved')
+
 def plot_svg(self,paths):
 
     for path in paths:
@@ -101,6 +103,10 @@ def plot_svg(self,paths):
                 y = np.polyval(yp, s)
 
                 self.ax.plot(x, self.height - y, '-g')
+
+                # print('count',count)
+                # a = input('qui')
+                # self.canvas.draw()
 
             elif 'Line' in str(type(elem)):
 
@@ -133,10 +139,14 @@ def draw_paths(self, paths):
     xx = []
     yy = []
 
+    xx = np.array(xx)
+    yy = np.array(yy)
+
     self.linestrings = []
 
     p_endOLD = paths[0][0].start
     p_startOLD = paths[0][0].end
+    pathOLD = paths[0][0]
 
     self.lines = []
     self.labels = []
@@ -217,21 +227,68 @@ def draw_paths(self, paths):
 
             # print('OTHER')
 
+            angle_check = FALSE
+
             if p_start == p_endOLD:
 
-                xx = np.append(xx, x)
-                yy = np.append(yy, y)
+                side1 = 'start'
+                side2 = 'end'
 
-                p_endOLD = p_end
+                vect1_x, vect1_y = tangent_path(elem, side1)
+                vect2_x, vect2_y = tangent_path(pathOLD, side2)
+
+                cos12 = vect1_x * vect2_x + vect1_y * vect2_y
+                angle_12 = np.degrees(np.arccos(-cos12))
+
+                # print('CHECK 1')
+                # print('count',count)
+                # print(p_start)
+                # print(p_end)
+                # print(p_startOLD)
+                # print(p_endOLD)
+                # print(angle_12)
+
+                if angle_12 < 20.0:
+
+                    angle_check = TRUE
+
+                    xx = np.append(xx, x)
+                    yy = np.append(yy, y)
+
+                    p_endOLD = p_end
+                    pathOLD = elem
 
             elif p_end == p_startOLD:
 
-                xx = np.append(x, xx)
-                yy = np.append(y, yy)
+                side1 = 'end'
+                side2 = 'start'
 
-                p_startOLD = p_start
+                vect1_x, vect1_y = tangent_path(elem, side1)
+                vect2_x, vect2_y = tangent_path(pathOLD, side2)
 
-            else:
+                cos12 = vect1_x * vect2_x + vect1_y * vect2_y
+                angle_12 = np.degrees(np.arccos(-cos12))
+
+                # print('CHECK 2')
+                # print('count',count)
+                # print(p_start)
+                # print(p_end)
+                # print(p_startOLD)
+                # print(p_endOLD)
+                # print(angle_12)
+
+
+                if angle_12 < 20.0:
+
+                    angle_check = TRUE
+
+                    xx = np.append(x, xx)
+                    yy = np.append(y, yy)
+
+                    p_startOLD = p_start
+                    pathOLD = elem
+
+            if not angle_check:
 
                 # print('NEW PATH', count)
 
@@ -254,11 +311,13 @@ def draw_paths(self, paths):
                                          **text_kwargs)
                     self.labels.append(label)
 
-                xx = x
-                yy = y
+                xx = np.array(x)
+                yy = np.array(y)
 
                 p_startOLD = p_start
                 p_endOLD = p_end
+                pathOLD = elem
+
     self.ax.set_xlim([0, self.width])
     self.ax.set_ylim([0, self.height])
 
@@ -266,7 +325,6 @@ def draw_paths(self, paths):
     self.lines_set = np.zeros(len(self.lines), dtype=bool)
 
     self.canvas.draw()
-
 
 def change_paths_order(self, paths):
 
@@ -279,7 +337,7 @@ def change_paths_order(self, paths):
         for count2, path2 in enumerate(paths[0][count1 + 1:]):
 
             if (path1.start == path2.end) or (path1.start == path2.start) or (
-                    path1.end == path2.end) or (path1.end == path2.start):
+                path1.end == path2.end) or (path1.end == path2.start):
 
                 if (path1.start == path2.end):
 
@@ -301,13 +359,11 @@ def change_paths_order(self, paths):
                     side1 = 'end'
                     side2 = 'start'
 
-
                 vect1_x, vect1_y = tangent_path(path1, side1)
                 vect2_x, vect2_y = tangent_path(path2, side2)
 
                 cos12 = vect1_x * vect2_x + vect1_y * vect2_y
                 angle_12 = np.degrees(np.arccos(-cos12))
-                print(angle_12)
 
                 if angle_12 < 30.0:
 
@@ -407,16 +463,16 @@ def tangent_path(elem, side):
 
         if (side == 'end'):
 
-            x1 = np.polyval(xp, 1.0)
-            y1 = np.polyval(yp, 1.0)
+            x1 = real(p_end)
+            y1 = imag(p_end)
 
             x2 = np.polyval(xp, 0.99)
             y2 = np.polyval(yp, 0.99)
 
         else:
 
-            x1 = np.polyval(xp, 0.0)
-            y1 = np.polyval(yp, 0.0)
+            x1 = real(p_start)
+            y1 = imag(p_start)
 
             x2 = np.polyval(xp, 0.01)
             y2 = np.polyval(yp, 0.01)
@@ -439,8 +495,9 @@ def tangent_path(elem, side):
             x2 = real(p_end)
             y2 = imag(p_end)
 
-    tangent_x = (x1 - x2) / np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-    tangent_y = (y1 - y2) / np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+    den = np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+    tangent_x = (x1 - x2) / den
+    tangent_y = (y1 - y2) / den
 
     return tangent_x, tangent_y
 
@@ -517,10 +574,65 @@ def modify_paths(self, paths, side):
 
                 continue
 
-            if (p_start1 == p_start2) or (p_start1 == p_end2):
+            # vect1_x, vect1_y = tangent_path(path1, side1)
 
-                distMin = 0.0
-                break
+            if ( side1 == 'start'):
+
+                if (p_start1 == p_start2) or (p_start1 == p_end2):
+
+                    distMin = 0.0
+                    break
+
+                    """
+                    if (p_start1 == p_start2):
+
+                        vect2_x, vect2_y = tangent_path(path2, 'start')
+
+                    else:
+
+                        vect2_x, vect2_y = tangent_path(path2, 'end')
+
+                    cos12 = vect1_x * vect2_x + vect1_y * vect2_y
+                    angle_12 = np.degrees(np.arccos(-cos12))
+
+                    if ( angle_12 < 20.0):
+
+                        distMin = 0.0
+                        break
+
+                    else:
+
+                        continue
+                    """
+
+            elif ( side1 == 'end'):
+
+                if (p_end1 == p_start2) or (p_end1 == p_end2):
+
+                    distMin = 0.0
+                    break
+
+                    """
+                    if (p_end1 == p_start2):
+
+                        vect2_x, vect2_y = tangent_path(path2, 'start')
+
+                    else:
+
+                        vect2_x, vect2_y = tangent_path(path2, 'end')
+
+                    cos12 = vect1_x * vect2_x + vect1_y * vect2_y
+                    angle_12 = np.degrees(np.arccos(-cos12))
+
+                    if ( angle_12 < 20.0):
+
+                        distMin = 0.0
+                        break
+
+                    else:
+
+                        continue
+                    """
 
             xp_start2 = real(p_start2)
             yp_start2 = imag(p_start2)
@@ -539,6 +651,8 @@ def modify_paths(self, paths, side):
                 sideMin = np.argmin([dist1, dist2])
                 idxMin = count2
 
+        # for path with index ixMin, if one edge is close enough
+        # to path1, check if it is close to be aligned with path1
         if distMin > 0 and distMin <= dist_max:
 
             path2 = new_paths[0][idxMin]
@@ -663,7 +777,7 @@ class App(customtkinter.CTk):
         self.idx = 0
 
         # configure window
-        self.title("CreateMap")
+        self.title("MapPy")
         self.geometry(f"{1100}x{600}")
 
         # configure grid layout (2x3)
@@ -689,7 +803,7 @@ class App(customtkinter.CTk):
                                                  text="CreateMap",
                                                  font=customtkinter.CTkFont(
                                                      size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.logo_label.grid(row=0, column=0, padx=20, pady=(5, 10))
         self.sidebar_button_1 = customtkinter.CTkButton(
             self.sidebar_frame, text="Load image", command=self.select_file)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
@@ -931,6 +1045,14 @@ class App(customtkinter.CTk):
 
         self.epsg_entry.grid(row=4, column=0, padx=10, pady=5, sticky="w")
 
+        self.dz_entry = customtkinter.CTkEntry(master=self.coord_frame,
+                                                 placeholder_text="dz",
+                                                 height=30,
+                                                 border_width=2,
+                                                 corner_radius=10)
+
+        self.dz_entry.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+
         self.linestring_idx = -1
 
         # self.appearance_mode_optionemenu.set("Dark")
@@ -952,30 +1074,75 @@ class App(customtkinter.CTk):
         print("sidebar_button click")
 
     def subtract_two(self):
+
+        dz = self.dz_entry.get()
+
+        if dz.isnumeric():
+            self.dz = float(dz)
+        else:
+            print('Check dz')
+            return
+
         self.val -= 2.0 * self.dz
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
 
     def subtract_one(self):
+
+        dz = self.dz_entry.get()
+
+        if dz.isnumeric():
+            self.dz = float(dz)
+        else:
+            print('Check dz')
+            return
+
         self.val -= 1.0 * self.dz
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
 
     def equal_prev(self):
+
+        dz = self.dz_entry.get()
+
+        if dz.isnumeric():
+            self.dz = float(dz)
+        else:
+            print('Check dz')
+            return
+
         self.val -= 0.0 * self.dz
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
 
     def add_one(self):
+
+        dz = self.dz_entry.get()
+
+        if dz.isnumeric():
+            self.dz = float(dz)
+        else:
+            print('Check dz')
+            return
+
         self.val += 1.0 * self.dz
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
 
     def add_two(self):
+
+        dz = self.dz_entry.get()
+
+        if dz.isnumeric():
+            self.dz = float(dz)
+        else:
+            print('Check dz')
+            return
+
         self.val += 2.0 * self.dz
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
@@ -1077,7 +1244,9 @@ class App(customtkinter.CTk):
 
         if not epsg.isnumeric():
             print('Check epsg')
-            return
+            return    
+
+        print('OK')    
 
         if len(linestrings)>0:
 
@@ -1095,7 +1264,7 @@ class App(customtkinter.CTk):
                                            initialdir='./',
                                            filetypes=filetypes)
 
-        autotrace_cmd = '/usr/bin/autotrace'
+        autotrace_cmd = '../autotrace-master/autotrace'
         autotrace_opt = '--centerline --background-color ffffff --color-count 2 --preserve-width'
         autotrace_inp = '-input-format ppm'
         autotrace_out = '-output-format svg -output-file'
