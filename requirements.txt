@@ -1,0 +1,7 @@
+geopandas
+matplotlib
+darkdetect
+svgpathtools
+shapely
+
+
