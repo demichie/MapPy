@@ -1,6 +1,8 @@
 import os
 import copy
 
+import rasterio
+
 import pickle
 
 import tkinter
@@ -77,8 +79,6 @@ def save_shp(linestrings, elev, filename_svg, lx, ly, cellsize, epsg):
     filename_shp = filename_svg.replace('svg', 'shp')
     path_geom.to_file(filename_shp)
 
-    print(filename_shp,' saved')
-
 def plot_svg(self,paths):
 
     for path in paths:
@@ -103,10 +103,6 @@ def plot_svg(self,paths):
                 y = np.polyval(yp, s)
 
                 self.ax.plot(x, self.height - y, '-g')
-
-                # print('count',count)
-                # a = input('qui')
-                # self.canvas.draw()
 
             elif 'Line' in str(type(elem)):
 
@@ -1077,13 +1073,13 @@ class App(customtkinter.CTk):
 
         dz = self.dz_entry.get()
 
-        if dz.isnumeric():
-            self.dz = float(dz)
-        else:
+        try:
+            dz_val = float(dz)
+        except ValueError:
             print('Check dz')
             return
 
-        self.val -= 2.0 * self.dz
+        self.val -= 2.0 * dz_val
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
@@ -1092,13 +1088,13 @@ class App(customtkinter.CTk):
 
         dz = self.dz_entry.get()
 
-        if dz.isnumeric():
-            self.dz = float(dz)
-        else:
+        try:
+            dz_val = float(dz)
+        except ValueError:
             print('Check dz')
             return
 
-        self.val -= 1.0 * self.dz
+        self.val -= 1.0 * dz_val
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
@@ -1107,13 +1103,13 @@ class App(customtkinter.CTk):
 
         dz = self.dz_entry.get()
 
-        if dz.isnumeric():
-            self.dz = float(dz)
-        else:
+        try:
+            dz_val = float(dz)
+        except ValueError:
             print('Check dz')
             return
 
-        self.val -= 0.0 * self.dz
+        self.val -= 0.0 * dz_val
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
@@ -1122,13 +1118,13 @@ class App(customtkinter.CTk):
 
         dz = self.dz_entry.get()
 
-        if dz.isnumeric():
-            self.dz = float(dz)
-        else:
+        try:
+            dz_val = float(dz)
+        except ValueError:
             print('Check dz')
             return
 
-        self.val += 1.0 * self.dz
+        self.val += 1.0 * dz_val
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
@@ -1138,12 +1134,12 @@ class App(customtkinter.CTk):
         dz = self.dz_entry.get()
 
         if dz.isnumeric():
-            self.dz = float(dz)
+            dz_val = float(dz)
         else:
             print('Check dz')
             return
 
-        self.val += 2.0 * self.dz
+        self.val += 2.0 * dz_val
         # print("sidebar_button click",self.val)
         self.entry.delete(0, END)
         self.entry.insert(0, str(self.val))
@@ -1224,29 +1220,29 @@ class App(customtkinter.CTk):
 
         print(lx, ly, cellsize, epsg)
 
-        if lx.isnumeric():
+        try:
             lx = float(lx)
-        else:
+        except ValueError:
             print('Check lx')
             return
 
-        if ly.isnumeric():
+        try:
             ly = float(ly)
-        else:
+        except ValueError:
             print('Check ly')
             return
 
-        if cellsize.isnumeric():
+        try:
             cellsize = float(cellsize)
-        else:
+        except ValueError:
             print('Check cellsize')
             return
 
-        if not epsg.isnumeric():
+        try:
+            epsg_int = int(epsg)
+        except ValueError:
             print('Check epsg')
-            return    
-
-        print('OK')    
+            return   
 
         if len(linestrings)>0:
 
@@ -1257,7 +1253,7 @@ class App(customtkinter.CTk):
             save_lines(rem_linestrings, self)
 
     def select_file(self):
-        filetypes = (('ppm files', '*.ppm'), ('All files',
+        filetypes = (('jpg or tif files', '*.jpg *.tif'), ('All files',
                                                                    '*.*'))
 
         self.filename = fd.askopenfilename(title='Open a file',
@@ -1277,6 +1273,33 @@ class App(customtkinter.CTk):
         os.system(cmd)
         self.filename_jpg = self.filename
         print(cmd)
+
+        if self.filename[-3:]=='tif':
+        
+            tiff = rasterio.open(self.filename)
+            
+            xll = tiff.bounds.left
+            yll = tiff.bounds.bottom
+            xtr = tiff.bounds.right
+            ytr = tiff.bounds.top
+            
+            lx = tiff.bounds.left
+            self.llx_entry.delete(0, END)
+            self.llx_entry.insert(0, str(xll))
+            
+            ly = tiff.bounds.bottom
+            self.lly_entry.delete(0, END)
+            self.lly_entry.insert(0, str(yll))
+
+            dx = (xtr-xll)/tiff.width
+            dy = (ytr-yll)/tiff.height
+            cellsize = 0.5*(dx+dy)
+            self.cellsize_entry.delete(0, END)
+            self.cellsize_entry.insert(0, str(cellsize))
+
+            crs = str(tiff.crs).split(':')[-1]
+            self.epsg_entry.delete(0, END)
+            self.epsg_entry.insert(0, str(crs))
 
         img = plt.imread(self.filename)
 
